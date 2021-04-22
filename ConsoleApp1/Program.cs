@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -17,7 +17,8 @@ namespace ConsoleTestApp
     {
         static void Main(string[] args)
         {
-            string text = Console.ReadLine(); //Console.ReadLine();
+            Console.WriteLine("Введите адрес URL: ");
+            string text = Console.ReadLine();
             var task = Task.Run(async () => await sendRequest(text));
             var result = task.Result;
 
@@ -56,7 +57,6 @@ namespace ConsoleTestApp
             List<string> siteLinks = new List<string>();
             IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             driver.Url = @text;
-            //var links = driver.FindElements(By.XPath(@".//div[@src]"));
             var links = driver.FindElements(By.XPath("//a"));
             foreach (IWebElement link in links)
             {
