@@ -22,38 +22,53 @@ namespace ConsoleTestApp
             var task = Task.Run(async () => await sendRequest(text));
             var result = task.Result;
 
-            var responseStringTask = Task.Run(async () => await result.Content.ReadAsStringAsync());
+            
 
 
             XmlTextReader reader = new XmlTextReader(text + "sitemap.xml");
             List<string> xmlurls = new List<string>();
             xmlurls.Add(reader.GetAttribute("loc")); // парсинг xml
 
-            Console.WriteLine(responseStringTask.Result);
+            foreach (string i in xmlurls)
+            { if (i == null) continue;
+                Console.WriteLine("Ссылки в файле XML");
+                try
+                {
+                    HttpWebRequest request2 = (HttpWebRequest)WebRequest.Create(i);
+                    request2.Accept = "text/html";
+                    request2.UserAgent =
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.72 Safari/537.36";
+
+                    Stopwatch timer1 = new Stopwatch();
+
+                    timer1.Start();
+                    HttpWebResponse response1 = (HttpWebResponse)request2.GetResponse();
+                    response1.Close();
+
+                    timer1.Stop();
+
+                    Console.Write(i + "|           ");
+                    Console.WriteLine(timer1.ElapsedMilliseconds);
+                }
+                catch (WebException e)
+                {
+                }
+                catch (Exception generalException)
+                {
+                    Console.WriteLine(generalException);
+                }
+            }
+ 
             Console.ReadKey();
 
         }
 
         public static async Task<HttpResponseMessage> sendRequest(string text)
         {
-            // Расчет производительности
-            HttpWebRequest request1 = (HttpWebRequest)WebRequest.Create(text);
-            request1.Accept = "text/html";
-            request1.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.72 Safari/537.36";
-            Stopwatch timer = new Stopwatch();
 
-            timer.Start();
-
-            HttpWebResponse response = (HttpWebResponse)request1.GetResponse();
-            response.Close();
-
-            timer.Stop();
-
-            TimeSpan timeTaken = timer.Elapsed;
-            Console.WriteLine(timer);
-            // вывод результата
 
             // парсинг начальной страницы
+
             List<string> siteLinks = new List<string>();
             IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             driver.Url = @text;
@@ -68,9 +83,9 @@ namespace ConsoleTestApp
 
             // производительность внутренних ссылок
 
-            Console.WriteLine("-------------------------------------------");
-            Console.WriteLine("ms");
-
+            Console.WriteLine("---------------------------------------------------------------------------------------------------------------------------------------------");
+            Console.WriteLine("     URL                                                      |   ms       ");
+            Console.WriteLine("Ссылки на самой странице");
             foreach (string i in siteLinks)
             {
                 if (i == null) continue;
@@ -90,9 +105,9 @@ namespace ConsoleTestApp
 
                     timer1.Stop();
 
-                    TimeSpan timeTaken1 = timer1.Elapsed;
-                    Console.WriteLine(i);
-                    Console.WriteLine(timeTaken1);
+
+                    Console.Write(i+"|           ");
+                    Console.WriteLine(timer1.ElapsedMilliseconds);
                 }
                 catch (WebException e)
                 {
@@ -105,6 +120,7 @@ namespace ConsoleTestApp
 
             Console.WriteLine("-------------------------------------------------------");
             // end
+            
             HttpClient httpClient = new HttpClient();
             HttpRequestMessage request = new HttpRequestMessage();
             request.RequestUri = new Uri(text);
