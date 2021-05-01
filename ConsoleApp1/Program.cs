@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
+using HtmlAgilityPack;
+
 
 
 namespace ConsoleTestApp
@@ -50,7 +48,6 @@ namespace ConsoleTestApp
             }
 
 
-
             var task = Task.Run(async () => await sendRequest(text,xmlurls));
             var result = task.Result; 
             Console.ReadKey();
@@ -66,22 +63,45 @@ namespace ConsoleTestApp
             int counturls=0;
             List<string> siteLinks = new List<string>();
             List<string> webLinks = new List<string>();
-            
-            IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-            driver.Url = @text;
-            var links = driver.FindElements(By.XPath("//a"));
-            foreach (IWebElement link in links)
-            {
-                webLinks.Add(link.GetAttribute("href"));
-
-            }
+            List<string> URL = new List<string>();
 
             // список ссылок
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(text);
+            webRequest.Method = "GET";
+            webRequest.UserAgent = "Mozilla/5.0 (Windows NT 6.1; rv:14.0) Gecko/20100101 Firefox/14.0.1";
+            webRequest.Referer = @text;
 
+            HtmlDocument doc = new HtmlDocument();
+            HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
+            doc.Load(webResponse.GetResponseStream(), true);
+            foreach (HtmlAgilityPack.HtmlNode node in doc.DocumentNode.SelectNodes("//a[@href]"))
+            {
 
+                URL.Add(node.Attributes["href"].Value);
 
+     
+            }
+            foreach (string i in URL)
+            {
+                if (i.StartsWith("https://"))
+                {
+                    
+                    webLinks.Add(i);
 
+                }
+                else if (i.StartsWith("//"))
+                {
+                    string c = "https:" + i;
+                    webLinks.Add(c);
+                    
+                }
+                else {
+                    string x = "https://" + i;
+                    webLinks.Add(x);
+                    
 
+                }
+            }
 
 
 
@@ -121,7 +141,7 @@ namespace ConsoleTestApp
 
             Console.WriteLine("---------------------------------------------------------------------------------------------------------------------------------------------");
             Console.WriteLine("     URL                                                      |   ms       ");
-            foreach (string i in siteLinks)
+            foreach (string i in webLinks)
             {
                 if (i == null) continue;
 
@@ -149,7 +169,7 @@ namespace ConsoleTestApp
                 }
                 catch (Exception generalException)
                 {
-                    Console.WriteLine(generalException);
+                    continue;
                 }
             }
 
@@ -165,7 +185,6 @@ namespace ConsoleTestApp
             request.Method = HttpMethod.Get;
             request.Headers.Add("accept", "text/html");                  
             request.Headers.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.72 Safari/537.36");
-
             return await httpClient.SendAsync(request);
         }
     }
